@@ -1,5 +1,3 @@
-import 'dart:html';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -7,15 +5,20 @@ import '../todo.dart';
 
 // Todo 리스트의 카드 클래스 위젯이다.
 class ToDoCard extends StatefulWidget {
+  const ToDoCard({Key? key}) : super(key: key);
+
   @override
   _ToDoCardState createState() => _ToDoCardState();
 }
 
 class _ToDoCardState extends State<ToDoCard> {
   //할 일 목록을 저장할 변수와 입력받은 할 일 문자열을 조작하는 컨트롤러가 필요하다. (TextEditingController)
-  final _items = <ToDo>[]; // 할일 저장할 리스트 이다.
+  // final _items = <ToDo>[]; // 할일 저장할 리스트 이다.
   // 나중에 배열형태를 map 형식을 돌려서 item list 식으로 보여줄 것이다.
+  // 하지만 이 _items는 firebase와 연동 한다면 사용하지 않는다.
+
   final _todoController = TextEditingController();
+  String textContent = '';
 
   // TextField를 사용해 입력한 값을 다루기 위해서는 이 컨트롤러가  반드시 필요하다.
   // 이 컨트롤러가 텍스트의 변화를 감지하고 핸들링 해준다.
@@ -41,6 +44,11 @@ class _ToDoCardState extends State<ToDoCard> {
               Expanded(
                   child: TextField(
                 controller: _todoController,
+                onChanged: (value){
+                  setState(() {
+                    textContent = value;
+                  });
+                }
                 // 입력한 text의 값을 실시간으로 감지 시켜주는 controller 이다.
               )),
               ElevatedButton(
@@ -57,23 +65,25 @@ class _ToDoCardState extends State<ToDoCard> {
             ],
           ),
           StreamBuilder<QuerySnapshot>(
+            // flutter 에서는 StreamBuilder를 사용해 stream 처리를 한다.
             stream: FirebaseFirestore.instance.collection('todo').snapshots(),
+            // firestore에 있는 todo컬렉션에 있는 데이터들을 가지고 온다.
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return CircularProgressIndicator();
+                return const CircularProgressIndicator();
+                // snapshot에 데이터를 가지고 있지 않다면
+                // 즉, 아직 못불러 와다면 로딩 화면을 그리라는 코드다.
               }
               final documents = snapshot.data?.docs;
+              // snapshot에 data가 있다면 docs에 있는 값을 documnets 변수에 집어넣는다.
               return Expanded(
                   child: ListView(
                       children: documents!
                           .map((doc) => _buildItemWidget(doc))
                           .toList())
-                  // 이부분이 중요하다.
-                  // _items는 현재 빈 배열이다.
-                  // 따라서 children은 배열을 갖기 때문에 [] 이부분을 쓰지 않고 바로
-                  // _items 를 사용했으며, 해당 배열 item을 map 돌면서 나타내는 함수 형식으로
-                  // 코드를 구성했다. (react 때 배열 형태를 map 도는 것과 비슷한 유형이다.)
-                  // 단, 마지막에 toList() 를 해야 오류가 안나니 이를 숙지 하도록 하자.
+                  // documents! 는 null 값이 아니라는 소리다.
+                // 그래서 그 값을 map 으로 돌면서 toList()로 배열 형식으로 처리한다는 소리다.
+                // 그 내용은 바로 buildItemWidget으로 돌린다.
                   );
             },
           )
@@ -96,13 +106,9 @@ class _ToDoCardState extends State<ToDoCard> {
         .collection('todo')
         .doc(snapshot.id)
         .delete();
-    print(snapshot.id);
+    // doc(snapshot.id) 자동으로 클릭된 todo컬렉션의 문서이름을 불러와 준다.
+    // 정말 개편하다......javascript때를 생각하면... 따흑...
   }
-
-  // 현재 클릭한 문서값을 나타내는 것만 배운다면 firebase 연동
-  // CRUD는 완벽하다.
-  // 내일은 아침일찍 일어나서 해당 코드 파악 후,
-  // 바로 로그인, 로그아웃, 회원가입 공부에 들어가자.
 
   void _toggleTodo(DocumentSnapshot snapshot) {
     FirebaseFirestore.instance
@@ -112,10 +118,10 @@ class _ToDoCardState extends State<ToDoCard> {
   }
 
   Widget _buildItemWidget(DocumentSnapshot snapshot) {
-    // 이 _buildItemWidget 은 인자로 데이터 베이스에서의 doc 을 받는다.
+    // 이 _buildItemWidget 은 인자로 데이터 베이스에서의 doc을 snapshot이란 이름으로 받는다.
     final todo = ToDo(snapshot['title'], isDone: snapshot['isDone']);
     // todo 변수는 ToDo()클래스로 인자에다가 데이터 베이스에서 받아오는
-    // doc['title'], isDone: doc['isDone']을 넣는다.
+    // snapshot['title'], isDone: snapshot['isDone']을 넣는다.
     return ListTile(
       onTap: () {
         // 클릭하면 완료/ 취소 등의 작업을 할 예정입니다.

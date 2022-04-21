@@ -2,7 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:todolistapp/pages/todolistpage.dart';
 import 'package:firebase_core/firebase_core.dart';
-import '';
+// WidgetsFlutterBinding.ensureInitialized()를 사용하기 위해선
+// firebase_core 패키지를 설치해야 한다.
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,7 @@ void main() async {
           projectId: 'flutter-to-do-list-be786'
       )
   );
+  // 위의 방식은 flutter와 firebase의 연동에 있어서 필수적인 코드 방식이다.
   runApp(const MyApp());
 }
 
